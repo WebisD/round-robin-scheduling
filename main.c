@@ -30,6 +30,13 @@ int Quantum = INT_MAX;
 int quant_process;
 Process* all_process;
 
+/*################################## Function Declarations ################################*/
+
+int compare_process(const void *a, const void *b);
+float round_robin();
+void print_list();
+void get_inputs();
+
 /*##################################   Opengl   ##################################*/
 
 Ponto cpu_P1 = {40, 150};
@@ -162,7 +169,26 @@ void mainOpengl(int argc, char **argv){
 
 /*##################################   RR Scheduling   ##################################*/
 
+int compare_process(const void *a, const void *b) {
+    return ( (*(Process*)a).arrival - (*(Process*)b).arrival);
+}
 
+float round_robin() {
+    qsort(all_process, quant_process, sizeof(Process), compare_process);
+    print_list();
+}
+
+void print_list() {
+    printf("\nList of Processes\n");
+
+    for (int i = 0; i < quant_process; i++) {
+        printf("Process P%d\n", all_process[i].pid);
+        printf("\tduration = %dms\n", all_process[i].duration);
+        printf("\tarrival = %dms\n", all_process[i].arrival);
+    }
+
+    printf("\n");
+}
 
 /*##################################   Main   ##################################*/
 void get_inputs(){
@@ -177,18 +203,25 @@ void get_inputs(){
     all_process = malloc(sizeof(Process) * quant_process);
     Process temp;
     int quant_i_o, _i_o;
-    int *all_i_o;
 
     for (int i = 0; i < quant_process; i++)
     {
+
         printf("--- Info of Process P%d ---\n", i+1);
         temp.pid = i+1;
+        
         printf("Duration in ms: ");
         scanf("%d", &temp.duration);
+        
         printf("Arrival time in ms: ");
         scanf("%d", &temp.arrival);
+        
         printf("How many I/O does the process have: ");
         scanf("%d", &quant_i_o);
+        
+        int *all_i_o;
+        all_i_o = malloc(sizeof(int) * quant_i_o);
+
         printf("Put the I/O in ascending order: \n");
         for (int j = 0; j < quant_i_o; j++)
         {
@@ -196,10 +229,14 @@ void get_inputs(){
             scanf("%d", &_i_o);
             all_i_o[j] = _i_o;
         }
+
         temp.i_o = all_i_o;
         all_process[i] = temp;
     }
-    printf("Oiii");
+    
+    print_list();
+
+
     return;
 }   
 
@@ -212,11 +249,7 @@ int main(int argc, char **argv)
 
     get_inputs();
 
-    /*for (int i = 0; i < quant_process; i++)
-    {
-        printf("%d", all_process[i].pid);
-    }*/
-    
+    float time_taken = round_robin();
 
     return 0;
 }
