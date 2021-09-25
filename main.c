@@ -23,16 +23,19 @@ typedef struct
     int pid;
 	int duration;
     int arrival;
-    int *i_o;
+    int number_of_IO;
+    int *IO;
+    int time_taken;
 }Process;
 
-int Quantum = INT_MAX;
+int quantum = INT_MAX;
 int quant_process;
 Process* all_process;
+int total_duration = 0;
 
-#define MAX 100
+#define MAX 10000
 
-int intArray[MAX];
+Process* queue[MAX];
 int front = 0;
 int rear = -1;
 int itemCount = 0;
@@ -43,6 +46,8 @@ int compare_process(const void *a, const void *b);
 float round_robin();
 void print_list();
 void get_inputs();
+void print_process(int pid);
+void print_queue();
 
 /*##################################   Opengl   ##################################*/
 
@@ -177,44 +182,48 @@ void mainOpengl(int argc, char **argv){
 
 /*##################################   Queue   ##################################*/
 
-int peek() {
-   return intArray[front];
+Process* peek() {
+    return queue[front];
 }
 
 int isEmpty() {
-   return itemCount == 0;
+    return itemCount == 0;
 }
 
 int isFull() {
-   return itemCount == MAX;
+    return itemCount == MAX;
 }
 
 int size() {
-   return itemCount;
+    return itemCount;
 }  
 
-void insert(int data) {
+void insert(Process* data) {
 
-   if(!isFull()) {
-	
-      if(rear == MAX-1) {
-         rear = -1;            
-      }       
+    if(!isFull()) {
 
-      intArray[++rear] = data;
-      itemCount++;
-   }
+        if(rear == MAX-1) {
+            rear = -1;            
+        }       
+
+        rear++;
+
+        queue[rear] = data;
+        itemCount++;
+    }
 }
 
-int removeData() {
-   int data = intArray[front++];
-	
-   if(front == MAX) {
-      front = 0;
-   }
-	
-   itemCount--;
-   return data;  
+Process* removeData() {
+    Process *data = queue[front];
+
+    front++;
+
+    if(front == MAX) {
+        front = 0;
+    }
+
+    itemCount--;
+    return data;  
 }
 
 /*##################################   RR Scheduling   ##################################*/
@@ -225,7 +234,59 @@ int compare_process(const void *a, const void *b) {
 
 float round_robin() {
     qsort(all_process, quant_process, sizeof(Process), compare_process);
-    print_list();
+
+    int i, j;
+    int average_waiting_time = 0;
+
+    insert(&all_process[0]);
+
+    Process *current_process;
+    for (i = 0; i <= total_duration; i++) {
+        current_process = peek();
+
+        printf("\n");
+        print_queue();
+        printf("i: %d ----------- Processo P%d -----------\n", i, current_process->pid);
+
+        current_process->duration -= 1;
+        
+        if (current_process->duration == 0) {
+            printf("\tAcabou processo p%d\n", current_process->pid);
+            print_process(current_process->pid);
+            current_process->time_taken = i;
+            print_process(current_process->pid);
+            average_waiting_time += i;
+            
+            removeData();
+        }
+
+        for (j = 0; j < current_process->number_of_IO; j++) {
+            if (current_process->IO[j] == i) {
+                printf("\tIO do processo p%d aconteceu!\n", current_process->pid);
+                insert(removeData());
+
+                printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
+            }
+        }
+
+        if (i != 0 && i%quantum == 0){
+            printf("\tQuantum ocorreu!\n");
+            Process *processo = removeData();
+            insert(processo);
+            // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
+        }
+
+        for (j = 1; j < quant_process; j++) { 
+            if (all_process[j].arrival == i) {
+                printf("\tChegada do process P%d\n", all_process[j].pid);
+                insert(&all_process[j]);
+            }
+        }
+    }
+
+    printf("Acabou round robin!\n");
+
+    return average_waiting_time / quant_process;
 }
 
 void print_list() {
@@ -235,6 +296,32 @@ void print_list() {
         printf("Process P%d\n", all_process[i].pid);
         printf("\tduration = %dms\n", all_process[i].duration);
         printf("\tarrival = %dms\n", all_process[i].arrival);
+        printf("\ttime_taken = %dms\n", all_process[i].time_taken);
+    }
+
+    printf("\n");
+}
+
+void print_process(int pid) {
+    printf("\n\tProcess P%d\n", pid);
+
+    for (int i = 0; i < quant_process; i++) {
+        if (all_process[i].pid == pid) {
+            printf("\t\tduration = %dms\n", all_process[i].duration);
+            printf("\t\tarrival = %dms\n", all_process[i].arrival);
+            printf("\t\ttime_taken = %dms\n", all_process[i].time_taken);
+            printf("\t\tnumber_of_IO = %dms\n", all_process[i].number_of_IO);
+        }
+    }
+
+    printf("\n");
+}
+
+void print_queue() {
+    printf("Queue:");
+
+    for (int i = front; i < itemCount; i++) {
+        printf(" %d", queue[i]->pid);   
     }
 
     printf("\n");
@@ -245,47 +332,49 @@ void get_inputs(){
     printf("Round Robin Scheduling\n");
     
     printf("What is the value of the quantum: ");
-    scanf("%d", &Quantum);
+    scanf("%d", &quantum);
     
     printf("How many processes do you have: ");
     scanf("%d", &quant_process);
 
     all_process = malloc(sizeof(Process) * quant_process);
-    Process temp;
-    int quant_i_o, _i_o;
+    int quant_IO, _i_o;
 
     for (int i = 0; i < quant_process; i++)
     {
+        Process temp;
+        temp.time_taken = 0;
 
         printf("--- Info of Process P%d ---\n", i+1);
         temp.pid = i+1;
         
         printf("Duration in ms: ");
         scanf("%d", &temp.duration);
+
+        total_duration += temp.duration;
         
         printf("Arrival time in ms: ");
         scanf("%d", &temp.arrival);
         
         printf("How many I/O does the process have: ");
-        scanf("%d", &quant_i_o);
+        scanf("%d", &quant_IO);
         
-        int *all_i_o;
-        all_i_o = malloc(sizeof(int) * quant_i_o);
+        temp.IO = malloc(sizeof(int) * quant_IO);
+
+        int *all_IO = malloc(sizeof(int) * quant_IO);
+        temp.number_of_IO = quant_IO;
 
         printf("Put the I/O in ascending order: \n");
-        for (int j = 0; j < quant_i_o; j++)
+        for (int j = 0; j < quant_IO; j++)
         {
             printf("I/0: ");
             scanf("%d", &_i_o);
-            all_i_o[j] = _i_o;
+            all_IO[j] = _i_o;
         }
 
-        temp.i_o = all_i_o;
+        temp.IO = all_IO;
         all_process[i] = temp;
     }
-    
-    print_list();
-
 
     return;
 }   
@@ -299,7 +388,12 @@ int main(int argc, char **argv)
 
     get_inputs();
 
-    float time_taken = round_robin();
+    printf("\n\n");
+
+    float average_waiting_time = round_robin();
+
+    print_list();
+    printf("Tempo de Espera Médio: %.2f", average_waiting_time);
 
     return 0;
 }
