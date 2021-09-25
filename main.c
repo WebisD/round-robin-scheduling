@@ -258,6 +258,10 @@ float round_robin() {
         // print_queue();
         // printf("i: %d ----------- Processo P%d -----------\n", i, current_process->pid);
 
+        if (i == 0) {
+            printf("T-%2d - start\n", i);
+        }
+
         if (i != 0){
             current_process->remaining_time -= 1;
         }
@@ -265,15 +269,16 @@ float round_robin() {
         if (current_process->remaining_time == 0) {
             // printf("\tAcabou processo p%d\n", current_process->pid);
             
-            print_process(current_process->pid);
+            // print_process(current_process->pid);
             // printf("\ttime_taken = %d - %d - %d\n", i, current_process->duration, current_process->arrival);
             current_process->time_taken = i - current_process->duration - current_process->arrival;
 
-            print_process(current_process->pid);
+            // print_process(current_process->pid);
             average_waiting_time += i - current_process->duration - current_process->arrival;
             
             Process *processo = removeData();
             // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
+            printf("T-%2d - end of process P%d\n", i, current_process->pid);
 
             if (isEmpty() == 0){
                 peek()->start_time = i;
@@ -290,6 +295,8 @@ float round_robin() {
                 // printf("\tformula: %d - %d = %d\n", current_process->duration, current_process->remaining_time, current_process->IO[j]);
 
                 // printf("\tIO do processo p%d aconteceu!\n", current_process->pid);
+
+                printf("T-%2d - I/O operation: P%d\n", i, all_process[j].pid);
 
                 Process *processo = removeData();
                 // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
@@ -314,17 +321,25 @@ float round_robin() {
             // printf("\tInseriu processo P%d no final da fila\n", processo->pid);
             
             // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
+
+            printf("T-%2d - end of quantum: P%d\n", i, all_process[j].pid);
         }
 
         for (j = 1; j < quant_process; j++) { 
             if (all_process[j].arrival == i) {
-                // printf("\tChegada do processo P%d\n", all_process[j].pid);
+                printf("T-%2d - arrival of process: P%d\n", i, all_process[j].pid);
                 insert(&all_process[j]);
             }
         }
+
+        print_queue();
+        printf("On CPU: P%d\n", current_process->pid);
+        
+        printf("\n");
     }
 
     // printf("Acabou round robin!\n");
+    printf("END!\n\n");
 
     return average_waiting_time / quant_process;
 }
@@ -359,6 +374,11 @@ void print_process(int pid) {
 
 void print_queue() {
     printf("Queue:");
+
+    if (isEmpty() == 1) {
+        printf(" empty\n");
+        return;
+    }
 
     for (int i = rear; i >= front; i--) {
         printf(" %d(%d)", queue[i]->pid, queue[i]->remaining_time);   
@@ -438,8 +458,14 @@ int main(int argc, char **argv)
     float average_waiting_time = round_robin();
 
     qsort(all_process, quant_process, sizeof(Process), compare_pid);
-    print_list();
-    printf("Average waiting time: %.2fms", average_waiting_time);
+    // print_list();
+    printf("Waiting times:\n");
+
+    for(int i = 0; i < quant_process; i++) { 
+        printf("P%d: %3dms\n", all_process[i].pid, all_process[i].time_taken);
+    }
+
+    printf("\nAverage waiting time: %.2fms\n", average_waiting_time);
 
     return 0;
 }
