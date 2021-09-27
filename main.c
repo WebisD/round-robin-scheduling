@@ -26,7 +26,8 @@ typedef struct
     int number_of_IO;
     int *IO;
     int time_taken;
-    int start_time;
+    int *start_time;
+    int length_start_time;
     int remaining_time;
 }Process;
 
@@ -246,7 +247,8 @@ float round_robin() {
     float average_waiting_time = 0;
 
     insert(&all_process[0]);
-    all_process[0].start_time = 0;
+    peek()->start_time[0] = 0;
+    peek()->length_start_time ++;
 
     int running_processes = quant_process;
 
@@ -259,13 +261,14 @@ float round_robin() {
         // printf("i: %d ----------- Processo P%d -----------\n", i, current_process->pid);
 
         if (i == 0) {
-            printf("T-%2d - start\n", i);
+            printf("Time -%2d - start\n", i);
         }
 
         if (i != 0){
             current_process->remaining_time -= 1;
         }
         
+        //Process has finished
         if (current_process->remaining_time == 0) {
             // printf("\tAcabou processo p%d\n", current_process->pid);
             
@@ -278,62 +281,69 @@ float round_robin() {
             
             Process *processo = removeData();
             // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
-            printf("T-%2d - end of process P%d\n", i, current_process->pid);
+            printf("Time -%2d - end of process P%d\n", i, current_process->pid);
 
             if (isEmpty() == 0){
-                peek()->start_time = i;
+                peek()->start_time[peek()->length_start_time] = i;
+                peek()->length_start_time++;
             }
 
             running_processes -= 1;
             if (running_processes == 0){
+                print_queue();
                 break;
             }
         }
 
         for (j = 0; j < current_process->number_of_IO; j++) {
+            // I/O happened
             if (current_process->duration - current_process->remaining_time == current_process->IO[j]) {
                 // printf("\tformula: %d - %d = %d\n", current_process->duration, current_process->remaining_time, current_process->IO[j]);
 
                 // printf("\tIO do processo p%d aconteceu!\n", current_process->pid);
 
-                printf("T-%2d - I/O operation: P%d\n", i, all_process[j].pid);
+                printf("Time -%2d - I/O operation: P%d\n", i, current_process->pid);
 
                 Process *processo = removeData();
                 // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
 
                 insert(processo);
+
                 // printf("\tInseriu processo P%d no final da fila\n", processo->pid);
-                
-                peek()->start_time = i;
+                peek()->start_time[peek()->length_start_time] = i;
+                peek()->length_start_time++;
 
                 // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
             }
         }
 
-        if (i != 0 && current_process->start_time + quantum == i){
+        // Quantum happened
+        if (i != 0 && current_process->start_time[peek()->length_start_time-1] + quantum == i){
             // printf("\tQuantum ocorreu!\n");
             
             Process *processo = removeData();
             // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
 
             insert(processo);
-            peek()->start_time = i;
+
+            peek()->start_time[peek()->length_start_time] = i;
+            peek()->length_start_time++;
             // printf("\tInseriu processo P%d no final da fila\n", processo->pid);
             
             // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
 
-            printf("T-%2d - end of quantum: P%d\n", i, all_process[j].pid);
+            printf("Time -%2d - end of quantum: P%d\n", i, current_process->pid);
         }
 
         for (j = 1; j < quant_process; j++) { 
             if (all_process[j].arrival == i) {
-                printf("T-%2d - arrival of process: P%d\n", i, all_process[j].pid);
+                printf("Time -%2d - arrival of process: P%d\n", i, all_process[j].pid);
                 insert(&all_process[j]);
             }
         }
 
         print_queue();
-        printf("On CPU: P%d\n", current_process->pid);
+        printf("On CPU: P%d\n", peek()->pid);
         
         printf("\n");
     }
@@ -380,10 +390,10 @@ void print_queue() {
         return;
     }
 
-    for (int i = rear; i >= front; i--) {
-        printf(" %d(%d)", queue[i]->pid, queue[i]->remaining_time);   
+    for (int i = front; i <= rear; i++) {
+        printf(" P%d(%d)", queue[i]->pid, queue[i]->remaining_time);   
         
-        if (i > front){
+        if (i < rear){
             printf(",");
         }
     }
@@ -441,16 +451,19 @@ void get_inputs(){
         all_process[i] = temp;
     }
 
+    for (int i = 0; i < quant_process; i++)
+    {
+        all_process[i].start_time = malloc(sizeof(int) * total_duration);
+        all_process[i].length_start_time = 0;
+    }
+    
+
     return;
 }   
 
 // Programa Principal
 int main(int argc, char **argv)
 {
-    #ifdef _opengl
-        mainOpengl(argc, argv);
-    #endif
-
     get_inputs();
 
     printf("\n\n");
@@ -466,6 +479,20 @@ int main(int argc, char **argv)
     }
 
     printf("\nAverage waiting time: %.2fms\n", average_waiting_time);
+
+    /*for (int i = 0; i < quant_process; i++) {
+        printf("%d", all_process[i].pid);
+        for (int j = 0; j < all_process[i].length_start_time; j++)
+        {
+            printf(" - %d", all_process[i].start_time[j]);
+        }
+        printf("\n");
+    }*/
+
+    #ifdef _opengl
+        mainOpengl(argc, argv);
+    #endif
+
 
     return 0;
 }
