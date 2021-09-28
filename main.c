@@ -1,5 +1,5 @@
 // Comment this line if you don't have opengl installed
-//#define _opengl
+#define _opengl
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +36,9 @@ int quant_process;
 Process* all_process;
 int total_duration = 0;
 
+int* splits_cpu;
+int total_splits = 0;
+
 #define MAX 10000
 
 Process* queue[MAX];
@@ -61,6 +64,44 @@ Ponto cpu_P3 = {600, 100};
 Ponto cpu_P4 = {600, 150};
 
 // Função callback chamada para gerenciar eventos de teclas
+void sort_process(){
+
+    for (int i = 0; i < quant_process; i++)
+    {
+        total_splits += all_process[i].length_start_time;
+    }
+
+    //printf("%d", total_splits);
+
+    int* splits = malloc(sizeof(int) * total_splits);;
+    
+    int greater = INT_MAX;
+
+    for (int k = 0; k < total_splits; k++)
+    {    
+        for (int i = 0; i < quant_process; i++) {
+            for (int j = 0; j < all_process[i].length_start_time; j++)
+            {
+                int z = all_process[i].start_time[j];
+                if (all_process[i].start_time[j] < greater){
+                    if (k>0 && all_process[i].start_time[j] > splits[k-1]){
+                        greater = all_process[i].start_time[j];
+                    }
+                    else if(k==0){
+                        greater = all_process[i].start_time[j];
+                    }
+                }
+            }
+        }
+        splits[k] = greater;
+        greater = INT_MAX;
+    }
+
+    splits_cpu = malloc(sizeof(int) * total_splits);
+    splits_cpu = splits;
+
+    return;
+}
 #ifdef _opengl
 
 void Teclado(unsigned char key, int x, int y)
@@ -83,14 +124,37 @@ void output(GLfloat x, GLfloat y, char *text)
 }
 
 void split_cpu(){
-    float cpu_unity = (cpu_P3.x - cpu_P1.x)/33;
+    float cpu_unity = (cpu_P3.x - cpu_P1.x)/total_duration;
     int j = 0;
     float i = 0;
-    char num[10] = "0";
 
+    char num[10] = "0";
     output(cpu_P2.x-5, cpu_P2.y-20, num);  
+
+    printf("oi %d \n", total_splits);
+
+    for (int i = 1; i < total_splits; i++)
+    {
+        //printf("%d - %f", splits_cpu[i], (cpu_P1.x + cpu_unity)*splits_cpu[i]);
+
+        double x = cpu_P1.x + cpu_unity*splits_cpu[i];
+
+        glBegin(GL_LINE_STRIP);
+            glVertex2i(x,cpu_P1.y);
+            glVertex2i(x,cpu_P2.y);
+        glEnd();
+
+        sprintf(num, "%d", splits_cpu[i]);
+        if (j >= 10){
+            output(x-10, cpu_P2.y-20, num);
+        }
+        else{
+            output(x-5, cpu_P2.y-20, num);
+        }
+    }
     
-    for (float i = cpu_P1.x+cpu_unity; i < cpu_P3.x; i = i + cpu_unity)
+    
+    /*for (float i = cpu_P1.x+cpu_unity; i < cpu_P3.x; i = i + cpu_unity)
     {
         glBegin(GL_LINE_STRIP);
             glVertex2i(i,cpu_P1.y);
@@ -105,11 +169,11 @@ void split_cpu(){
         else{
             output(i-5, cpu_P2.y-20, num);
         }
-    }
+    }**/
 
-    j++;
+    /*j++;
     sprintf(num, "%d", j); 
-    output(cpu_P3.x-5, cpu_P2.y-20, num);
+    output(cpu_P3.x-5, cpu_P2.y-20, num);*/
     
 }
 
@@ -135,6 +199,7 @@ void Desenha(void)
     glEnd();
 
     split_cpu();
+
     glFlush();
 }
 
@@ -181,10 +246,12 @@ void mainOpengl(int argc, char **argv){
     glutMainLoop();
     return;
 }
+
 #endif
 
 
 /*##################################   Queue   ##################################*/
+
 
 Process* peek() {
     return queue[front];
@@ -230,7 +297,9 @@ Process* removeData() {
     return data;  
 }
 
+
 /*##################################   RR Scheduling   ##################################*/
+
 
 int compare_arrival(const void *a, const void *b) {
     return ( (*(Process*)a).arrival - (*(Process*)b).arrival);
@@ -401,7 +470,89 @@ void print_queue() {
     printf("\n");
 }
 
+
 /*##################################   Main   ##################################*/
+
+
+void get_lazy_inputs(){
+    quantum = 4;
+    quant_process = 5;
+
+    all_process = malloc(sizeof(Process) * quant_process);
+    int quant_IO[] = {4,1,1,2,0}, _i_o;
+
+    int dur[] = {9,10,5,7,2};
+    int arr[] = {10,4,0,1,17};
+
+    for (int i = 0; i < quant_process; i++)
+    {
+        Process temp;
+        temp.time_taken = 0;
+
+        temp.pid = i+1;
+
+        temp.duration = dur[i];
+
+        total_duration += temp.duration;
+        temp.remaining_time = temp.duration;
+
+        temp.arrival = arr[i];
+
+        temp.IO = malloc(sizeof(int) * quant_IO[i]);
+
+        int *all_IO = malloc(sizeof(int) * quant_IO[i]);
+        temp.number_of_IO = quant_IO[i];
+
+        if (i == 0){
+            int a[] = {2,4,6,8};
+            for (int j = 0; j < quant_IO[i]; j++){
+                all_IO[j] = a[j]; 
+            }
+            
+        }
+        if (i == 1){
+            int a[] = {5};
+            for (int j = 0; j < quant_IO[i]; j++){
+                all_IO[j] = a[j]; 
+            }
+            
+        }
+        if (i == 2){
+            int a[] = {2};
+            for (int j = 0; j < quant_IO[i]; j++){
+                all_IO[j] = a[j]; 
+            }
+            
+        }
+        if (i == 3){
+            int a[] = {3,6};
+            for (int j = 0; j < quant_IO[i]; j++){
+                all_IO[j] = a[j]; 
+            }
+            
+        }
+        if (i == 4){
+            int a[] = {};
+            for (int j = 0; j < quant_IO[i]; j++){
+                all_IO[j] = a[j]; 
+            }
+            
+        }
+
+        temp.IO = all_IO;
+        all_process[i] = temp;
+
+    }
+
+    for (int i = 0; i < quant_process; i++)
+    {
+        all_process[i].start_time = malloc(sizeof(int) * total_duration);
+        all_process[i].length_start_time = 0;
+    }
+    
+    return;
+}
+
 void get_inputs(){
     printf("Round Robin Scheduling\n");
     
@@ -464,7 +615,7 @@ void get_inputs(){
 // Programa Principal
 int main(int argc, char **argv)
 {
-    get_inputs();
+    get_lazy_inputs();
 
     printf("\n\n");
 
@@ -480,19 +631,29 @@ int main(int argc, char **argv)
 
     printf("\nAverage waiting time: %.2fms\n", average_waiting_time);
 
-    /*for (int i = 0; i < quant_process; i++) {
+    for (int i = 0; i < quant_process; i++) {
         printf("%d", all_process[i].pid);
         for (int j = 0; j < all_process[i].length_start_time; j++)
         {
             printf(" - %d", all_process[i].start_time[j]);
         }
         printf("\n");
-    }*/
+    }
+
+
+    sort_process();
+
+    printf("\n");
+
+    for (int i = 0; i < total_splits; i++)
+    {
+        printf("%d ", splits_cpu[i]);
+    }
+    printf("\n");
 
     #ifdef _opengl
         mainOpengl(argc, argv);
     #endif
-
 
     return 0;
 }
