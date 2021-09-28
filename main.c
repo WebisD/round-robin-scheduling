@@ -1,5 +1,5 @@
 // Comment this line if you don't have opengl installed
-#define _opengl
+// #define _opengl
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +12,14 @@
 #include <GL/glut.h>
 #endif
 
+
+typedef struct
+{
+    float r;
+    float g;
+    float b;
+    float a;
+} Color;
 
 typedef struct 
 {
@@ -30,6 +38,7 @@ typedef struct
     int *start_time;
     int length_start_time;
     int remaining_time;
+    Color color;
 }Process;
 
 int quantum = INT_MAX;
@@ -56,6 +65,9 @@ void print_list();
 void get_inputs();
 void print_process(int pid);
 void print_queue();
+float get_random_float(int range);
+Color generateRandomColor();
+void printColor(Color color);
 
 /*##################################   Opengl   ##################################*/
 
@@ -468,6 +480,28 @@ void print_queue() {
     printf("\n");
 }
 
+float get_random_float(int range) { 
+    return ((float)rand()/(float)(RAND_MAX)) * range;
+}
+
+Color generateRandomColor()
+{
+    int range = 1;
+    Color color;
+    color.r = get_random_float(range);
+    color.g = get_random_float(range);
+    color.b = get_random_float(range);
+    color.a = 1;
+
+    return color;
+}
+
+void printColor(Color color){
+    printf("r: %.2f\n", color.r);
+    printf("g: %.2f\n", color.g);
+    printf("b: %.2f\n", color.b);
+    printf("a: %.2f\n", color.a);
+}
 
 /*##################################   Main   ##################################*/
 
@@ -486,6 +520,7 @@ void get_lazy_inputs(){
     {
         Process temp;
         temp.time_taken = 0;
+        temp.color = generateRandomColor();
 
         temp.pid = i+1;
 
@@ -567,6 +602,7 @@ void get_inputs(){
     {
         Process temp;
         temp.time_taken = 0;
+        temp.color = generateRandomColor();
 
         printf("--- Info of Process P%d ---\n", i+1);
         temp.pid = i+1;
