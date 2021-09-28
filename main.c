@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 #ifdef _opengl
 #include <GL/freeglut.h>
@@ -102,6 +103,7 @@ void sort_process(){
 
     return;
 }
+
 #ifdef _opengl
 
 void Teclado(unsigned char key, int x, int y)
@@ -127,21 +129,24 @@ void split_cpu(){
     float cpu_unity = (cpu_P3.x - cpu_P1.x)/total_duration;
     int j = 0;
     float i = 0;
+    double x;
 
     char num[10] = "0";
     output(cpu_P2.x-5, cpu_P2.y-20, num);  
 
-    printf("oi %d \n", total_splits);
-
     for (int i = 1; i < total_splits; i++)
     {
-        //printf("%d - %f", splits_cpu[i], (cpu_P1.x + cpu_unity)*splits_cpu[i]);
+        //printf("%d - %f", splits_cpu[1], (cpu_P1.x + cpu_unity)*splits_cpu[1]);
 
-        double x = cpu_P1.x + cpu_unity*splits_cpu[i];
+        x = cpu_P1.x + cpu_unity*splits_cpu[i];
 
-        glBegin(GL_LINE_STRIP);
-            glVertex2i(x,cpu_P1.y);
-            glVertex2i(x,cpu_P2.y);
+        glColor3f(1.0f, 1.0f, 1.0f);
+
+        glBegin(GL_POLYGON);
+            glVertex2i(cpu_P1.x, cpu_P1.y);
+            glVertex2i(cpu_P2.x, cpu_P2.y);
+            glVertex2i(x, cpu_P2.y);
+            glVertex2i(x, cpu_P1.y);
         glEnd();
 
         sprintf(num, "%d", splits_cpu[i]);
@@ -149,32 +154,25 @@ void split_cpu(){
             output(x-10, cpu_P2.y-20, num);
         }
         else{
-            output(x-5, cpu_P2.y-20, num);
+            output(x-5, cpu_P2.y-20, num);  
         }
     }
-    
-    
-    /*for (float i = cpu_P1.x+cpu_unity; i < cpu_P3.x; i = i + cpu_unity)
-    {
-        glBegin(GL_LINE_STRIP);
-            glVertex2i(i,cpu_P1.y);
-            glVertex2i(i,cpu_P2.y);
-        glEnd();
 
-        j++;
-        sprintf(num, "%d", j);
-        if (j >= 10){
-            output(i-10, cpu_P2.y-20, num);
-        }
-        else{
-            output(i-5, cpu_P2.y-20, num);
-        }
-    }**/
+    x = cpu_P1.x + cpu_unity*total_duration;
 
-    /*j++;
-    sprintf(num, "%d", j); 
-    output(cpu_P3.x-5, cpu_P2.y-20, num);*/
-    
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    glBegin(GL_POLYGON);
+        glVertex2i(cpu_P1.x, cpu_P1.y);
+        glVertex2i(cpu_P2.x, cpu_P2.y);
+        glVertex2i(x, cpu_P2.y);
+        glVertex2i(x, cpu_P1.y);
+    glEnd();
+
+    sprintf(num, "%d", total_duration);
+    output(x-5, cpu_P2.y-20, num);
+
+    return;
 }
 
 // Função callback chamada para fazer o desenho
@@ -188,15 +186,15 @@ void Desenha(void)
 
      // Especifica que a cor corrente é vermelha
      //         R     G     B
-    glColor3f(1.0f, 1.0f, 1.0f);
+    //glColor3f(1.0f, 1.0f, 1.0f);
 
-     // Desenha um quadrado preenchido com a cor corrente
-    glBegin(GL_LINE_LOOP);
+    // Desenha um quadrado preenchido com a cor corrente
+    /*glBegin(GL_POLYGON);
         glVertex2i(cpu_P1.x,cpu_P1.y);
         glVertex2i(cpu_P2.x,cpu_P2.y);
         glVertex2i(cpu_P3.x,cpu_P3.y);
         glVertex2i(cpu_P4.x,cpu_P4.y);
-    glEnd();
+    glEnd();*/
 
     split_cpu();
 
@@ -639,7 +637,6 @@ int main(int argc, char **argv)
         }
         printf("\n");
     }
-
 
     sort_process();
 
