@@ -194,10 +194,11 @@ void output(GLfloat x, GLfloat y, char *text)
     glPushMatrix();
     glTranslatef(x, y, 0);
     glScalef(0.1, 0.1, 0.1);
-    glLineWidth(1.2);
+    glLineWidth(1.5);
     for (p = text; *p; p++)
         glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
     glPopMatrix();
+    glLineWidth(1.2);
 }
 
 void split_cpu(){
