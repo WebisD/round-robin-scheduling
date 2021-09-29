@@ -1,5 +1,5 @@
 // Comment this line if you don't have opengl installed
-// #define _opengl
+#define _opengl
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,12 +41,21 @@ typedef struct
     Color color;
 }Process;
 
+typedef struct{
+    Process* P;
+    int time;
+    Ponto P1;
+    Ponto P2;
+    Ponto P3;
+    Ponto P4; 
+}Pro_arr;
+
 int quantum = INT_MAX;
 int quant_process;
 Process* all_process;
 int total_duration = 0;
 
-int* splits_cpu;
+Pro_arr* splits_cpu;
 int total_splits = 0;
 
 #define MAX 10000
@@ -68,15 +77,30 @@ void print_queue();
 float get_random_float(int range);
 Color generateRandomColor();
 void printColor(Color color);
+void output(GLfloat x, GLfloat y, char *text);
 
 /*##################################   Opengl   ##################################*/
+#ifdef _opengl
 
 Ponto cpu_P1 = {40, 150};
 Ponto cpu_P2 = {40, 100};
 Ponto cpu_P3 = {600, 100};
 Ponto cpu_P4 = {600, 150};
+Ponto labels = {210, 200};
 
-// Função callback chamada para gerenciar eventos de teclas
+void display_labels(){
+    char num[10];
+
+    for (int i = 0; i < quant_process; i++)
+    {
+        glColor3f(all_process[i].color.r, all_process[i].color.g, all_process[i].color.b);
+        sprintf(num, "P%d", all_process[i].pid);
+        output(labels.x+(i*50), labels.y, num);
+    }
+
+    return;
+}
+
 void sort_process(){
 
     for (int i = 0; i < quant_process; i++)
@@ -86,9 +110,10 @@ void sort_process(){
 
     //printf("%d", total_splits);
 
-    int* splits = malloc(sizeof(int) * total_splits);;
+    Pro_arr* splits = malloc(sizeof(Pro_arr) * total_splits);
     
     int greater = INT_MAX;
+    int index;  
 
     for (int k = 0; k < total_splits; k++)
     {    
@@ -97,26 +122,64 @@ void sort_process(){
             {
                 int z = all_process[i].start_time[j];
                 if (all_process[i].start_time[j] < greater){
-                    if (k>0 && all_process[i].start_time[j] > splits[k-1]){
+                    if (k>0 && all_process[i].start_time[j] > splits[k-1].time){
                         greater = all_process[i].start_time[j];
+                        index = i;
                     }
                     else if(k==0){
                         greater = all_process[i].start_time[j];
+                        index = i;
                     }
                 }
             }
         }
-        splits[k] = greater;
+        
+        Pro_arr temp = {&all_process[index], greater};
+        splits[k] = temp;
+
         greater = INT_MAX;
     }
 
-    splits_cpu = malloc(sizeof(int) * total_splits);
+    splits_cpu = malloc(sizeof(Pro_arr) * total_splits);
     splits_cpu = splits;
 
     return;
 }
 
-#ifdef _opengl
+void create_divisions(){
+    Ponto P1 = {40, 150};
+    Ponto P2 = {40, 100};
+    double x;
+    int i;
+    float cpu_unity = (cpu_P3.x - cpu_P1.x)/total_duration;
+
+    for (i = 0; i < total_splits-1; i++)
+    {
+        splits_cpu[i].P1 = P1;
+        splits_cpu[i].P2 = P2;
+        x = P1.x + cpu_unity*(splits_cpu[i+1].time - splits_cpu[i].time);
+        Ponto P3 = {x,P2.y};
+        Ponto P4 = {x,P1.y};
+
+        splits_cpu[i].P3 = P3;
+        splits_cpu[i].P4 = P4;
+
+        P1 = P4;
+        P2 = P3;
+    }
+
+    splits_cpu[i].P1 = P1;
+    splits_cpu[i].P2 = P2;
+    x = P1.x + cpu_unity*(total_duration - splits_cpu[i].time);
+    Ponto P3 = {x,P2.y};
+    Ponto P4 = {x,P1.y};
+
+    splits_cpu[i].P3 = P3;
+    splits_cpu[i].P4 = P4;
+
+
+    return;
+}
 
 void Teclado(unsigned char key, int x, int y)
 {
@@ -138,51 +201,37 @@ void output(GLfloat x, GLfloat y, char *text)
 }
 
 void split_cpu(){
-    float cpu_unity = (cpu_P3.x - cpu_P1.x)/total_duration;
-    int j = 0;
-    float i = 0;
+    
+    int j = 0, i = 0;
     double x;
+    char num[10];
 
-    char num[10] = "0";
-    output(cpu_P2.x-5, cpu_P2.y-20, num);  
 
-    for (int i = 1; i < total_splits; i++)
+    for (i = 0; i < total_splits; i++)
     {
-        //printf("%d - %f", splits_cpu[1], (cpu_P1.x + cpu_unity)*splits_cpu[1]);
 
-        x = cpu_P1.x + cpu_unity*splits_cpu[i];
-
-        glColor3f(1.0f, 1.0f, 1.0f);
+        glColor3f(splits_cpu[i].P->color.r, splits_cpu[i].P->color.g, splits_cpu[i].P->color.b);
 
         glBegin(GL_POLYGON);
-            glVertex2i(cpu_P1.x, cpu_P1.y);
-            glVertex2i(cpu_P2.x, cpu_P2.y);
-            glVertex2i(x, cpu_P2.y);
-            glVertex2i(x, cpu_P1.y);
+            glVertex2i(splits_cpu[i].P1.x, splits_cpu[i].P1.y);
+            glVertex2i(splits_cpu[i].P2.x, splits_cpu[i].P2.y);
+            glVertex2i(splits_cpu[i].P3.x, splits_cpu[i].P3.y);
+            glVertex2i(splits_cpu[i].P4.x, splits_cpu[i].P4.y);
         glEnd();
 
-        sprintf(num, "%d", splits_cpu[i]);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        sprintf(num, "%d", splits_cpu[i].time);
         if (j >= 10){
-            output(x-10, cpu_P2.y-20, num);
+            output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num);
         }
         else{
-            output(x-5, cpu_P2.y-20, num);  
+            output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num);  
         }
+
     }
 
-    x = cpu_P1.x + cpu_unity*total_duration;
-
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    glBegin(GL_POLYGON);
-        glVertex2i(cpu_P1.x, cpu_P1.y);
-        glVertex2i(cpu_P2.x, cpu_P2.y);
-        glVertex2i(x, cpu_P2.y);
-        glVertex2i(x, cpu_P1.y);
-    glEnd();
-
     sprintf(num, "%d", total_duration);
-    output(x-5, cpu_P2.y-20, num);
+    output(splits_cpu[i-1].P3.x-7, splits_cpu[i-1].P3.y-20, num);  
 
     return;
 }
@@ -193,22 +242,12 @@ void Desenha(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-     // Limpa a janela de visualização com a cor de fundo especificada
+    // Limpa a janela de visualização com a cor de fundo especificada
     glClear(GL_COLOR_BUFFER_BIT);
 
-     // Especifica que a cor corrente é vermelha
-     //         R     G     B
-    //glColor3f(1.0f, 1.0f, 1.0f);
-
-    // Desenha um quadrado preenchido com a cor corrente
-    /*glBegin(GL_POLYGON);
-        glVertex2i(cpu_P1.x,cpu_P1.y);
-        glVertex2i(cpu_P2.x,cpu_P2.y);
-        glVertex2i(cpu_P3.x,cpu_P3.y);
-        glVertex2i(cpu_P4.x,cpu_P4.y);
-    glEnd();*/
-
     split_cpu();
+
+    display_labels();
 
     glFlush();
 }
@@ -253,7 +292,9 @@ void mainOpengl(int argc, char **argv){
 	glutKeyboardFunc(Teclado);
 
     Inicializa();
+
     glutMainLoop();
+
     return;
 }
 
@@ -676,11 +717,13 @@ int main(int argc, char **argv)
 
     sort_process();
 
+    create_divisions();
+
     printf("\n");
 
     for (int i = 0; i < total_splits; i++)
     {
-        printf("%d ", splits_cpu[i]);
+        printf("%d ", splits_cpu[i].time);
     }
     printf("\n");
 
