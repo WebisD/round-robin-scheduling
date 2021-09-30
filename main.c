@@ -87,9 +87,12 @@ Ponto cpu_P1 = {40, 150};
 Ponto cpu_P2 = {40, 100};
 Ponto cpu_P3 = {750, 100};
 Ponto cpu_P4 = {750, 150};
-Ponto labels = {210, 200};
+Ponto labels = {270, 200};
 
 int scrollSpeed = 10;
+float labelScale = 0.2;
+float drawingScale = 0.04;
+float cpu_unity = 9.0f;
 
 void display_labels(){
     char num[10];
@@ -98,7 +101,7 @@ void display_labels(){
     {
         glColor3f(all_process[i].color.r, all_process[i].color.g, all_process[i].color.b);
         sprintf(num, "P%d", all_process[i].pid);
-        output(labels.x+(i*50), labels.y, num, 0.2);
+        output(labels.x+(i*50), labels.y, num, labelScale);
     }
 
     return;
@@ -150,11 +153,10 @@ void sort_process(){
 }
 
 void create_divisions(){
-    Ponto P1 = {40, 150};
-    Ponto P2 = {40, 100};
+    Ponto P1 = {cpu_P1.x, cpu_P1.y};
+    Ponto P2 = {cpu_P2.x, cpu_P2.y};
     double x;
     int i;
-    float cpu_unity = (cpu_P3.x - cpu_P1.x)/total_duration;
 
     for (i = 0; i < total_splits-1; i++)
     {
@@ -180,14 +182,7 @@ void create_divisions(){
     splits_cpu[i].P3 = P3;
     splits_cpu[i].P4 = P4;
 
-
     return;
-}
-
-void Teclado(unsigned char key, int x, int y)
-{
-	if (key == 27)  // sai comm ESC
-		exit(0);
 }
 
 void output(GLfloat x, GLfloat y, char *text, GLfloat scale)
@@ -210,7 +205,6 @@ void split_cpu(){
     double x;
     char num[10];
 
-
     for (i = 0; i < total_splits; i++)
     {
 
@@ -226,18 +220,39 @@ void split_cpu(){
         //glColor3f(1.0f, 1.0f, 1.0f);
         sprintf(num, "%d", splits_cpu[i].time);
         if (j >= 10){
-            output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num, 0.1);
+            output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num, drawingScale);
         }
         else{
-            output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num, 0.1);  
+            output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num, drawingScale);  
         }
 
     }
 
     sprintf(num, "%d", total_duration);
-    output(splits_cpu[i-1].P3.x-7, splits_cpu[i-1].P3.y-20, num, 0.1);  
+    output(splits_cpu[i-1].P3.x-7, splits_cpu[i-1].P3.y-20, num, drawingScale);  
 
     return;
+}
+
+void Teclado(unsigned char key, int x, int y)
+{
+	if (key == 27)  // sai comm ESC
+		exit(0);
+}
+
+void specialInput(int key, int x, int y) {
+    if (key == GLUT_KEY_UP){
+        drawingScale += 0.05;
+        cpu_unity += 2;
+    }
+    if (key == GLUT_KEY_DOWN){
+        if (drawingScale > 0.045){
+            drawingScale -= 0.05;
+            cpu_unity -= 2;
+        }
+    }
+
+    glutPostRedisplay();
 }
 
 // Função callback chamada para fazer o desenho
@@ -249,8 +264,8 @@ void Desenha(void)
     // Limpa a janela de visualização com a cor de fundo especificada
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // create_divisions();
     split_cpu();
-
     display_labels();
 
     glFlush();
@@ -318,10 +333,11 @@ void mainOpengl(int argc, char **argv){
     glutCreateWindow("Round Robin Scheduling");
     glutDisplayFunc(Desenha);
     glutReshapeFunc(AlteraTamanhoJanela);
+    glutKeyboardFunc(Teclado);
+    glutSpecialFunc(specialInput);
     glutMouseFunc(mouseWheel);
     
     // Registra a função callback para tratamento das teclas ASCII
-	glutKeyboardFunc(Teclado);
 
     Inicializa();
 
@@ -723,7 +739,7 @@ void get_inputs(){
 int main(int argc, char **argv)
 {
     get_lazy_inputs();
-    //get_inputs();
+    // get_inputs();
 
     printf("\n\n");
 
