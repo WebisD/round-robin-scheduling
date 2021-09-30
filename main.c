@@ -77,6 +77,7 @@ void print_queue();
 float get_random_float(int range);
 Color generateRandomColor();
 void printColor(Color color);
+void mouseWheel(int, int, int, int);
 
 /*##################################   Opengl   ##################################*/
 #ifdef _opengl
@@ -87,6 +88,8 @@ Ponto cpu_P2 = {40, 100};
 Ponto cpu_P3 = {750, 100};
 Ponto cpu_P4 = {750, 150};
 Ponto labels = {210, 200};
+
+int scrollSpeed = 10;
 
 void display_labels(){
     char num[10];
@@ -280,6 +283,33 @@ void AlteraTamanhoJanela(GLsizei w, GLsizei h)
             gluOrtho2D (0.0f, 250.0f*w/h, 0.0f, 250.0f);
 }
 
+void mouseWheel(int button, int state, int x, int y)
+{
+    if (state == GLUT_DOWN){
+        if (button == 3)
+        {
+            for (int i = 0; i < total_splits; i++){
+                splits_cpu[i].P1.x += scrollSpeed;
+                splits_cpu[i].P2.x += scrollSpeed;
+                splits_cpu[i].P3.x += scrollSpeed;
+                splits_cpu[i].P4.x += scrollSpeed;
+            }
+        }
+        else if (button == 4)
+        {
+            for (int i = 0; i < total_splits; i++){
+                splits_cpu[i].P1.x -= scrollSpeed;
+                splits_cpu[i].P2.x -= scrollSpeed;
+                splits_cpu[i].P3.x -= scrollSpeed;
+                splits_cpu[i].P4.x -= scrollSpeed;
+            }
+        }
+    }
+    
+    glutPostRedisplay();
+    return;
+}
+
 void mainOpengl(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -288,6 +318,7 @@ void mainOpengl(int argc, char **argv){
     glutCreateWindow("Round Robin Scheduling");
     glutDisplayFunc(Desenha);
     glutReshapeFunc(AlteraTamanhoJanela);
+    glutMouseFunc(mouseWheel);
     
     // Registra a função callback para tratamento das teclas ASCII
 	glutKeyboardFunc(Teclado);
