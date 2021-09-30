@@ -77,15 +77,15 @@ void print_queue();
 float get_random_float(int range);
 Color generateRandomColor();
 void printColor(Color color);
-void output(GLfloat x, GLfloat y, char *text);
 
 /*##################################   Opengl   ##################################*/
 #ifdef _opengl
+void output(GLfloat x, GLfloat y, char *text, GLfloat scale);
 
 Ponto cpu_P1 = {40, 150};
 Ponto cpu_P2 = {40, 100};
-Ponto cpu_P3 = {600, 100};
-Ponto cpu_P4 = {600, 150};
+Ponto cpu_P3 = {750, 100};
+Ponto cpu_P4 = {750, 150};
 Ponto labels = {210, 200};
 
 void display_labels(){
@@ -95,7 +95,7 @@ void display_labels(){
     {
         glColor3f(all_process[i].color.r, all_process[i].color.g, all_process[i].color.b);
         sprintf(num, "P%d", all_process[i].pid);
-        output(labels.x+(i*50), labels.y, num);
+        output(labels.x+(i*50), labels.y, num, 0.2);
     }
 
     return;
@@ -187,18 +187,18 @@ void Teclado(unsigned char key, int x, int y)
 		exit(0);
 }
 
-void output(GLfloat x, GLfloat y, char *text)
+void output(GLfloat x, GLfloat y, char *text, GLfloat scale)
 {
     char *p;
     
     glPushMatrix();
     glTranslatef(x, y, 0);
-    glScalef(0.1, 0.1, 0.1);
-    glLineWidth(1.5);
+    glScalef(scale, scale, scale);
+    glLineWidth(1.2);
     for (p = text; *p; p++)
         glutStrokeCharacter(GLUT_STROKE_ROMAN, *p);
     glPopMatrix();
-    glLineWidth(1.2);
+    //glLineWidth(1.2);
 }
 
 void split_cpu(){
@@ -220,19 +220,19 @@ void split_cpu(){
             glVertex2i(splits_cpu[i].P4.x, splits_cpu[i].P4.y);
         glEnd();
 
-        glColor3f(1.0f, 1.0f, 1.0f);
+        //glColor3f(1.0f, 1.0f, 1.0f);
         sprintf(num, "%d", splits_cpu[i].time);
         if (j >= 10){
-            output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num);
+            output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num, 0.1);
         }
         else{
-            output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num);  
+            output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num, 0.1);  
         }
 
     }
 
     sprintf(num, "%d", total_duration);
-    output(splits_cpu[i-1].P3.x-7, splits_cpu[i-1].P3.y-20, num);  
+    output(splits_cpu[i-1].P3.x-7, splits_cpu[i-1].P3.y-20, num, 0.1);  
 
     return;
 }
@@ -283,7 +283,7 @@ void AlteraTamanhoJanela(GLsizei w, GLsizei h)
 void mainOpengl(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(900,350);
+    glutInitWindowSize(1100,350);
     glutInitWindowPosition(10,10);
     glutCreateWindow("Round Robin Scheduling");
     glutDisplayFunc(Desenha);
@@ -437,9 +437,9 @@ float round_robin() {
                 // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
             }
         }
-
+        Process* px = peek();
         // Quantum happened
-        if (i != 0 && current_process->start_time[peek()->length_start_time-1] + quantum == i){
+        if (i != 0 && current_process->start_time[current_process->length_start_time-1] + quantum == i){
             // printf("\tQuantum ocorreu!\n");
             
             Process *processo = removeData();
@@ -692,6 +692,7 @@ void get_inputs(){
 int main(int argc, char **argv)
 {
     get_lazy_inputs();
+    //get_inputs();
 
     printf("\n\n");
 
@@ -716,20 +717,24 @@ int main(int argc, char **argv)
         printf("\n");
     }
 
-    sort_process();
-
-    create_divisions();
-
-    printf("\n");
-
-    for (int i = 0; i < total_splits; i++)
-    {
-        printf("%d ", splits_cpu[i].time);
-    }
-    printf("\n");
-
     #ifdef _opengl
+
+        sort_process();
+
+        create_divisions();
+
+        printf("\n");
+
+        for (int i = 0; i < total_splits; i++)
+        {
+            printf("%d ", splits_cpu[i].time);
+        }
+        printf("\n");
+
+
         mainOpengl(argc, argv);
+
+
     #endif
 
     return 0;
