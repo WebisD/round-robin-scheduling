@@ -242,13 +242,17 @@ void Teclado(unsigned char key, int x, int y)
 
 void specialInput(int key, int x, int y) {
     if (key == GLUT_KEY_UP){
-        drawingScale += 0.05;
-        cpu_unity += 2;
+        if (drawingScale < 0.15){
+            drawingScale += 0.02;
+            cpu_unity += 2;
+            create_divisions();
+        }
     }
     if (key == GLUT_KEY_DOWN){
         if (drawingScale > 0.045){
-            drawingScale -= 0.05;
+            drawingScale -= 0.02;
             cpu_unity -= 2;
+            create_divisions();
         }
     }
 
@@ -264,7 +268,6 @@ void Desenha(void)
     // Limpa a janela de visualização com a cor de fundo especificada
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // create_divisions();
     split_cpu();
     display_labels();
 
