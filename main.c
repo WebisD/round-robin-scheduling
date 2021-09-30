@@ -79,8 +79,12 @@ Color generateRandomColor();
 void printColor(Color color);
 void mouseWheel(int, int, int, int);
 
+
 /*##################################   Opengl   ##################################*/
+
+
 #ifdef _opengl
+
 void output(GLfloat x, GLfloat y, char *text, GLfloat scale);
 
 Ponto cpu_P1 = {40, 150};
@@ -113,8 +117,6 @@ void sort_process(){
     {
         total_splits += all_process[i].length_start_time;
     }
-
-    //printf("%d", total_splits);
 
     Pro_arr* splits = malloc(sizeof(Pro_arr) * total_splits);
     
@@ -217,7 +219,6 @@ void split_cpu(){
             glVertex2i(splits_cpu[i].P4.x, splits_cpu[i].P4.y);
         glEnd();
 
-        //glColor3f(1.0f, 1.0f, 1.0f);
         sprintf(num, "%d", splits_cpu[i].time);
         if (j >= 10){
             output(splits_cpu[i].P2.x-10, splits_cpu[i].P2.y-20, num, drawingScale);
@@ -225,7 +226,6 @@ void split_cpu(){
         else{
             output(splits_cpu[i].P2.x-7, splits_cpu[i].P2.y-20, num, drawingScale);  
         }
-
     }
 
     sprintf(num, "%d", total_duration);
@@ -427,10 +427,6 @@ float round_robin() {
     for (i = 0; i <= total_duration; i++) {
         current_process = peek();
 
-        // printf("\n");
-        // print_queue();
-        // printf("i: %d ----------- Processo P%d -----------\n", i, current_process->pid);
-
         if (i == 0) {
             printf("Time -%2d - start\n", i);
         }
@@ -441,17 +437,13 @@ float round_robin() {
         
         //Process has finished
         if (current_process->remaining_time == 0) {
-            // printf("\tAcabou processo p%d\n", current_process->pid);
-            
-            // print_process(current_process->pid);
-            // printf("\ttime_taken = %d - %d - %d\n", i, current_process->duration, current_process->arrival);
+
             current_process->time_taken = i - current_process->duration - current_process->arrival;
 
-            // print_process(current_process->pid);
             average_waiting_time += i - current_process->duration - current_process->arrival;
             
             Process *processo = removeData();
-            // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
+
             printf("Time -%2d - end of process P%d\n", i, current_process->pid);
 
             if (isEmpty() == 0){
@@ -469,39 +461,27 @@ float round_robin() {
         for (j = 0; j < current_process->number_of_IO; j++) {
             // I/O happened
             if (current_process->duration - current_process->remaining_time == current_process->IO[j]) {
-                // printf("\tformula: %d - %d = %d\n", current_process->duration, current_process->remaining_time, current_process->IO[j]);
-
-                // printf("\tIO do processo p%d aconteceu!\n", current_process->pid);
 
                 printf("Time -%2d - I/O operation: P%d\n", i, current_process->pid);
 
                 Process *processo = removeData();
-                // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
 
                 insert(processo);
 
-                // printf("\tInseriu processo P%d no final da fila\n", processo->pid);
                 peek()->start_time[peek()->length_start_time] = i;
                 peek()->length_start_time++;
-
-                // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
             }
         }
         Process* px = peek();
         // Quantum happened
         if (i != 0 && current_process->start_time[current_process->length_start_time-1] + quantum == i){
-            // printf("\tQuantum ocorreu!\n");
             
             Process *processo = removeData();
-            // printf("\tRemoveu processo P%d do ínicio da fila\n", processo->pid);
 
             insert(processo);
 
             peek()->start_time[peek()->length_start_time] = i;
             peek()->length_start_time++;
-            // printf("\tInseriu processo P%d no final da fila\n", processo->pid);
-            
-            // printf("\tTrocando do processo P%d para o processo P%d\n", current_process->pid, peek()->pid);
 
             printf("Time -%2d - end of quantum: P%d\n", i, current_process->pid);
         }
@@ -519,7 +499,6 @@ float round_robin() {
         printf("\n");
     }
 
-    // printf("Acabou round robin!\n");
     printf("END!\n\n");
 
     return average_waiting_time / quant_process;
@@ -594,6 +573,7 @@ void printColor(Color color){
     printf("b: %.2f\n", color.b);
     printf("a: %.2f\n", color.a);
 }
+
 
 /*##################################   Main   ##################################*/
 
@@ -741,15 +721,15 @@ void get_inputs(){
 // Programa Principal
 int main(int argc, char **argv)
 {
-    get_lazy_inputs();
-    // get_inputs();
+    //get_lazy_inputs();
+    get_inputs();
 
     printf("\n\n");
 
     float average_waiting_time = round_robin();
 
     qsort(all_process, quant_process, sizeof(Process), compare_pid);
-    // print_list();
+
     printf("Waiting times:\n");
 
     for(int i = 0; i < quant_process; i++) { 
@@ -758,32 +738,13 @@ int main(int argc, char **argv)
 
     printf("\nAverage waiting time: %.2fms\n", average_waiting_time);
 
-    for (int i = 0; i < quant_process; i++) {
-        printf("%d", all_process[i].pid);
-        for (int j = 0; j < all_process[i].length_start_time; j++)
-        {
-            printf(" - %d", all_process[i].start_time[j]);
-        }
-        printf("\n");
-    }
-
     #ifdef _opengl
 
         sort_process();
 
         create_divisions();
 
-        printf("\n");
-
-        for (int i = 0; i < total_splits; i++)
-        {
-            printf("%d ", splits_cpu[i].time);
-        }
-        printf("\n");
-
-
         mainOpengl(argc, argv);
-
 
     #endif
 
