@@ -113,5 +113,5 @@ $ ./main
 
 ### Scrolling
 
-> Use the scroll wheel of your mouse to move the cpu for better view
+> Use the scroll wheel of your mouse 🖱️ to move the cpu for better view
 
