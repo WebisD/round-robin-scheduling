@@ -718,11 +718,28 @@ void get_inputs(){
     return;
 }   
 
+void get_txt_inputs(){
+    FILE *fp;
+    char buff[255];
+
+    fp = fopen("input.txt", "r");
+
+    if(fp == NULL){
+      printf("Error!");   
+      exit(1);             
+   }
+
+    fgets(buff, 255, (FILE*)fp);
+    printf("1 : %s\n", buff );
+
+    fclose(fp);
+}
+
 // Programa Principal
 int main(int argc, char **argv)
 {
-    //get_lazy_inputs();
-    get_inputs();
+    /*get_lazy_inputs();
+    //get_inputs();
 
     printf("\n\n");
 
@@ -746,8 +763,10 @@ int main(int argc, char **argv)
 
         mainOpengl(argc, argv);
 
-    #endif
+    #endif*/
 
     return 0;
+
+    get_txt_inputs();
 }
 
